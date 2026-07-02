@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 BOT_TOKEN = os.getenv("8787982429:AAGpfzIibK7e58YtvAl6g5m1EG2sZtEdFYA")
 CHAT_ID = os.getenv("6318865778")
 
-BASE_URL = "https://agropraktika.ru"
+BASE_URL = "https://agropraktika.eu"
 URL = f"{BASE_URL}/vacancies"
 
 seen = set()
