@@ -7,5 +7,5 @@ cmds = [
   "python -m playwright install --with-deps"
 ]
 
-[start]
+[phases.start]
 cmd = "python bot.py"
