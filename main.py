@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 BOT_TOKEN = os.getenv("8787982429:AAGpfzIibK7e58YtvAl6g5m1EG2sZtEdFYA")
 CHAT_ID = os.getenv("6318865778")
 
-BASE_URL = "https://agropraktika.eu"
+BASE_URL = "https://agropraktika.ru"
 URL = f"{BASE_URL}/vacancies"
 
 seen = set()
@@ -19,12 +19,24 @@ BLOCK_TEXT = "Регистрация временно приостановлен
 
 
 def send(msg):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    requests.post(url, data={"chat_id": CHAT_ID, "text": msg})
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        r = requests.post(url, data={"chat_id": CHAT_ID, "text": msg})
+        print("TG:", r.status_code, r.text)
+    except Exception as e:
+        print("TG ERROR:", e)
 
 
 def get_html(url):
-    r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+    print("GET:", url)
+
+    r = requests.get(
+        url,
+        headers={"User-Agent": "Mozilla/5.0"},
+        timeout=20
+    )
+
+    print("STATUS:", r.status_code)
 
     if r.status_code == 403:
         raise PermissionError("403")
@@ -34,6 +46,7 @@ def get_html(url):
 
 def parse_list(html):
     soup = BeautifulSoup(html, "html.parser")
+
     results = []
 
     for a in soup.select("a[href]"):
@@ -60,14 +73,23 @@ def is_closed(url):
 
 
 def run():
-    send("🤖 Бот запущен")
+    print("BOT STARTED")
+    send("🤖 Бот запущен (DEBUG MODE)")
 
     while True:
         try:
+            print("STEP 1: load vacancies page")
+
             html = get_html(URL)
+
+            print("STEP 2: parse")
             vacancies = parse_list(html)
 
+            print("FOUND:", len(vacancies))
+
             for title, link in vacancies:
+
+                print("VAC:", title)
 
                 if link not in seen:
                     seen.add(link)
@@ -75,7 +97,8 @@ def run():
 
                 try:
                     closed = is_closed(link)
-                except:
+                except Exception as e:
+                    print("CHECK ERROR:", e)
                     continue
 
                 prev = was_closed.get(link, True)
@@ -88,11 +111,13 @@ def run():
             time.sleep(CHECK_INTERVAL)
 
         except PermissionError:
+            print("403 BLOCKED")
             send("⚠️ 403 блокировка — жду 160 сек")
             time.sleep(BLOCKED_SLEEP)
 
         except Exception as e:
-            print(e)
+            print("MAIN ERROR:", e)
+            send(f"❌ Ошибка:\n{e}")
             time.sleep(CHECK_INTERVAL)
 
 
